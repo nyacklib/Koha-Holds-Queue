@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Excel Data Processor</title>
+</head>
+<body>
+  <input type="file" id="excelFile" accept=".xlsx,.xls">
+  <button id="processButton">Process Data</button>
+  <div id="result"></div>
+  <button id="printButton" disabled>Print</button>
+  <script src="script.js"></script>
+</body>
+</html>
+
+const excelFile = document.getElementById('excelFile');
+const processButton = document.getElementById('processButton');
+const resultDiv = document.getElementById('result');
+const printButton = document.getElementById('printButton');
+
+excelFile.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const data   
+ = new Uint8Array(event.target.result);   
+
+    // Use a library like Papa Parse to parse the Excel data
+    Papa.parse(data, {
+      header: true,
+      complete: (results) => {
+        const processedData = results.data.map((row) => {
+          const title = row['Column A'].split(' ')[0]; // Assuming title is the first word
+          const firstName = row['Column A'].split(' ')[1];
+          const lastName = row['Column A'].split(' ')[2];
+          return { title, firstName, lastName };
+        });
+
+        // Remove columns F, G, and H (adjust column names as needed)
+        results.data.forEach((row) => {
+          delete row['Column F'];
+          delete row['Column G'];
+          delete row['Column H'];
+        });
+
+        // Display the processed data in a table
+        resultDiv.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${processedData.map((row) => `
+                <tr>
+                  <td>${row.title}</td>
+                  <td>${row.firstName}</td>
+                  <td>${row.lastName}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        // Enable the print button
+        printButton.disabled = false;
+      }
+    });
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+printButton.addEventListener('click', () => {
+  resultDiv.style.display = 'none'; // Hide the table temporarily
+  window.print();
+  resultDiv.style.display = 'block'; // Show the table again
+});
